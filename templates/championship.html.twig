@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Welcome!{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
+        {% block stylesheets %}
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+        {% endblock %}
+
+        {% block javascripts %}
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        {% endblock %}
+    </head>
+    <body>
+
+    <div class="container my-5">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb breadcrumb-chevron p-3 bg-body-tertiary rounded-3">
+                <li class="breadcrumb-item">
+                    <a class="link-body-emphasis" href="{{ path('app_championship_index') }}">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24"><path d="M12.97 2.59a1.5 1.5 0 0 0-1.94 0l-7.5 6.363A1.5 1.5 0 0 0 3 10.097V19.5A1.5 1.5 0 0 0 4.5 21h4.75a.75.75 0 0 0 .75-.75V14h4v6.25c0 .414.336.75.75.75h4.75a1.5 1.5 0 0 0 1.5-1.5v-9.403a1.5 1.5 0 0 0-.53-1.144l-7.5-6.363Z"></path></svg>
+                        <span class="visually-hidden">Home</span>
+                    </a>
+                </li>
+                <li class="breadcrumb-item">
+                    <a class="link-body-emphasis fw-semibold text-decoration-none" href="#">{{ championship.getName() }}</a>
+                </li>
+                <li class="breadcrumb-item active" aria-current="page">
+                    Statistics
+                </li>
+            </ol>
+        </nav>
+
+        {% for message in app.flashes('notice') %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+    </div>
+
+    {# Абсолютно неправильно получаем наличие сгенерированных игр для чемпионата. ¯\_(ツ)_/¯ #}
+
+    {% if not championship.getGames.count() %}
+    <div class="col-lg-6 col-xxl-4 my-5 mx-auto">
+        <div class="d-grid gap-2">
+            <form action="{{ path('app_generate_games', {'championship': championship.getId() }) }}" method="post">
+            <button class="btn btn-primary" type="submit">
+                Generate games
+            </button>
+            </form>
+        </div>
+    </div>
+    {% endif %}
+
+    {% for group in groups %}
+
+        <h2>Group: {{ group.getName }}</h2>
+
+        <table class="table table-sm table-bordered">
+            <tr>
+                <th>&nbsp;</th>
+                {% for team in group.getTeams() %}
+                    <th scope="col">{{ team.getName() }}</th>
+                {% endfor %}
+                <th scope="col">Score</th>
+            </tr>
+
+            {% for team in group.getTeams() %}
+            <tr>
+                <th scope="row">{{ team.getName() }}</th>
+                {% for nested in group.getTeams() %}
+                    {% if team.getId() == nested.getId() %}
+                        <td class="table-dark">&nbsp;</td>
+                    {% else %}
+                        <td>
+                            {% set game = games['group'][group.getId()][team.getId()][nested.getId()]|default(null) %}
+                            {% if game %}
+                                {{ game.getGoalsA() }} : {{ game.getGoalsB() }}
+                            {% else %}
+                                {% set game = games['group'][group.getId()][nested.getId()][team.getId()]|default(null) %}
+                                {% if game %}
+                                    {{ game.getGoalsB() }} : {{ game.getGoalsA() }}
+                                {% else %}
+                                    &nbsp;
+                                {% endif %}
+                            {% endif %}
+                        </td>
+                    {% endif %}
+                {% endfor %}
+                <th scope="row">{{ scores[1][team.getId()]|default('&nbsp;') }}</th>
+            </tr>
+            {% endfor %}
+        </table>
+    {% endfor %}
+
+    {% if games is not empty %}
+        <h2>QUARTERFINAL</h2>
+
+        <table class="table table-sm table-bordered">
+            <thead>
+            <tr>
+                <th>Team A</th>
+                <th>Team B</th>
+                <th>Goals</th>
+            </tr>
+            </thead>
+
+            {% for game in games['playoff'][2] %}
+                <tr>
+                    <td {% if game.getGoalsA() > game.getGoalsB() %}class="table-success"{% elseif game.getGoalsA() < game.getGoalsB() %}class="table-danger"{% else %}class="table-warning"{% endif %}>{{ game.getTeamA().getName() }}</td>
+                    <td {% if game.getGoalsA() < game.getGoalsB() %}class="table-success"{% elseif game.getGoalsA() > game.getGoalsB() %}class="table-danger"{% else %}class="table-warning"{% endif %}>{{ game.getTeamB().getName() }}</td>
+                    <td>{{ game.getGoalsA() }} : {{ game.getGoalsB() }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <h2>SEMIFINAL</h2>
+
+        <table class="table table-sm table-bordered">
+            <thead>
+            <tr>
+                <th>Team A</th>
+                <th>Team B</th>
+                <th>Goals</th>
+            </tr>
+            </thead>
+
+            {% for game in games['playoff'][3] %}
+                <tr>
+                    <td {% if game.getGoalsA() > game.getGoalsB() %}class="table-success"{% elseif game.getGoalsA() < game.getGoalsB() %}class="table-danger"{% else %}class="table-warning"{% endif %}>{{ game.getTeamA().getName() }}</td>
+                    <td {% if game.getGoalsA() < game.getGoalsB() %}class="table-success"{% elseif game.getGoalsA() > game.getGoalsB() %}class="table-danger"{% else %}class="table-warning"{% endif %}>{{ game.getTeamB().getName() }}</td>
+                    <td>{{ game.getGoalsA() }} : {{ game.getGoalsB() }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+
+        <h2>FINAL</h2>
+
+        <table class="table table-sm table-bordered">
+            <thead>
+            <tr>
+                <th>Team A</th>
+                <th>Team B</th>
+                <th>Goals</th>
+            </tr>
+            </thead>
+
+            {% for game in games['playoff'][4] %}
+                <tr>
+                    <td {% if game.getGoalsA() > game.getGoalsB() %}class="table-success"{% elseif game.getGoalsA() < game.getGoalsB() %}class="table-danger"{% else %}class="table-warning"{% endif %}>{{ game.getTeamA().getName() }}</td>
+                    <td {% if game.getGoalsA() < game.getGoalsB() %}class="table-success"{% elseif game.getGoalsA() > game.getGoalsB() %}class="table-danger"{% else %}class="table-warning"{% endif %}>{{ game.getTeamB().getName() }}</td>
+                    <td>{{ game.getGoalsA() }} : {{ game.getGoalsB() }}</td>
+                </tr>
+            {% endfor %}
+        </table>
+    {% endif %}
+
+    {% if positions %}
+    <h2>Positions</h2>
+
+    <table class="table table-sm table-bordered">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Position</th>
+            </tr>
+        </thead>
+
+        {% for position in positions %}
+            <tr>
+                <td>{{ position.getTeam().getName() }}</td>
+                <td>{{ position.getPosition() }}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    </body>
+</html>

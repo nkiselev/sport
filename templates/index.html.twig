@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>{% block title %}Welcome!{% endblock %}</title>
+        <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22><text y=%221.2em%22 font-size=%2296%22>⚫️</text></svg>">
+        {% block stylesheets %}
+            <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+        {% endblock %}
+
+        {% block javascripts %}
+            <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+        {% endblock %}
+    </head>
+    <body>
+
+    <div class="px-4 text-center">
+        {% for message in app.flashes('notice') %}
+            <div class="alert alert-success alert-dismissible fade show" role="alert">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {% endfor %}
+
+        <h1 class="display-5 fw-bold text-body-emphasis">All championships</h1>
+        <div class="col-lg-6 mx-auto">
+            <div class="d-grid gap-2 d-sm-flex justify-content-sm-center">
+                <form action="{{ path('app_generate_championship') }}" method="post">
+                    <div class="input-group mb-3">
+                        {#
+                        <select class="form-select" name="groups" aria-label="Default select example">
+                            <option value="" selected>Count groups</option>
+                            {% for count in range(low=2, high=4, step=2) %}
+                                <option value="{{ count }}">{{ count }}</option>
+                            {% endfor %}
+                        </select>
+                        #}
+                        <select class="form-select" name="teams" aria-label="Default select example">
+                            <option value="" selected>Teams in group</option>
+                            {% for count in range(6, 10) %}
+                                <option value="{{ count }}">{{ count }}</option>
+                            {% endfor %}
+                        </select>
+                        <button class="btn btn-outline-primary" type="submit">Create new</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex flex-column flex-md-row p-4 gap-4 py-md-5 align-items-center justify-content-center">
+        <div class="list-group">
+            {% for championship in championships %}
+                <a href="{{ path('app_championship_show', {'championship': championship.getId()}) }}" class="list-group-item list-group-item-action d-flex gap-3 py-3" aria-current="true">
+                    {{ championship.getName() }}
+                </a>
+            {% endfor %}
+        </div>
+    </div>
+    </body>
+</html>
